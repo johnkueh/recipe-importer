@@ -98,5 +98,17 @@ export async function importRecipe(html: string, apiKey: string) {
     max_tokens: 16383,
   });
 
-  return response.choices[0].message.content;
+  const data = response.choices[0].message.content;
+  if (data) {
+    return JSON.parse(data) as ParsedRecipe;
+  }
 }
+
+export type ParsedRecipe = {
+  title: string;
+  banner_url: string;
+  prep_time: number;
+  total_time: number;
+  methods: string[];
+  ingredients: string[];
+};
