@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { importRecipe, ParsedRecipe } from "./importer";
+import { importRecipe, importRecipeParallel, ParsedRecipe } from "./importer";
 import { useState } from "react";
 import clsx from "clsx";
 import { isEmpty } from "lodash";
@@ -47,9 +47,17 @@ export default function Home() {
         </div>
         <div className="w-2/3">
           <div className="space-y-3">
-            <SinglePrompt enabled={startEnabled} html={html} apiKey={apiKey} />
+            <Prompt
+              title="Single request"
+              importFn={importRecipe}
+              enabled={startEnabled}
+              html={html}
+              apiKey={apiKey}
+            />
             <div className="w-full h-[1px] bg-gray-800" />
-            <ParallelPrompts
+            <Prompt
+              title="Parallel requests"
+              importFn={importRecipeParallel}
               enabled={startEnabled}
               html={html}
               apiKey={apiKey}
@@ -62,12 +70,14 @@ export default function Home() {
 }
 
 type PromptProps = {
+  title: string;
   enabled: boolean;
   html: string;
   apiKey: string;
+  importFn: (html: string, apiKey: string) => Promise<ParsedRecipe | null>;
 };
 
-function SinglePrompt({ enabled, html, apiKey }: PromptProps) {
+function Prompt({ title, enabled, html, apiKey, importFn }: PromptProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<ParsedRecipe>();
   const [elapsedTime, setElapsedTime] = useState<number>();
@@ -75,7 +85,7 @@ function SinglePrompt({ enabled, html, apiKey }: PromptProps) {
   return (
     <div className="space-y-3">
       <div className="flex flex-row justify-between items-center">
-        <h2 className="text-xl font-semibold">Single prompt</h2>
+        <h2 className="text-xl font-semibold">{title}</h2>
         <div className="flex flex-row space-x-3 items-center">
           {elapsedTime && (
             <span className="text-sm text-gray-500">{`${elapsedTime}ms`}</span>
@@ -85,42 +95,21 @@ function SinglePrompt({ enabled, html, apiKey }: PromptProps) {
             onClick={async () => {
               setIsLoading(true);
               const startTime = Date.now();
-              const response = await importRecipe(html, apiKey);
+              const response = await importFn(html, apiKey);
 
               const endTime = Date.now();
               setElapsedTime(endTime - startTime);
-              setResponse(response);
+
+              if (response) {
+                setResponse(response);
+              }
+
               setIsLoading(false);
             }}
           >
             {isLoading ? "Loading..." : "Start"}
           </Button>
         </div>
-      </div>
-      {response && <RecipePreview recipe={response} />}
-    </div>
-  );
-}
-
-function ParallelPrompts({ enabled, html, apiKey }: PromptProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<ParsedRecipe>();
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-row justify-between items-center">
-        <h2 className="text-xl font-semibold">Parallel prompts</h2>
-        <Button
-          disabled={!enabled || isLoading}
-          onClick={async () => {
-            setIsLoading(true);
-            const response = await importRecipe(html, apiKey);
-            setResponse(response);
-            setIsLoading(false);
-          }}
-        >
-          {isLoading ? "Loading..." : "Start"}
-        </Button>
       </div>
       {response && <RecipePreview recipe={response} />}
     </div>
