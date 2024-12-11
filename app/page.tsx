@@ -1,5 +1,7 @@
 "use client";
 
+export const maxDuration = 60;
+
 import { Button } from "@/components/ui/button";
 import { importRecipe, importRecipeParallel, ParsedRecipe } from "./importer";
 import { useState } from "react";
